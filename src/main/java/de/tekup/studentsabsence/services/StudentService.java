@@ -15,5 +15,4 @@ public interface StudentService {
 
     Student deleteStudent(Long sid);
 
-    Student getStudentByGroupId(long id);
 }

@@ -1,9 +1,7 @@
 package de.tekup.studentsabsence.services.impl;
 
 import de.tekup.studentsabsence.entities.Group;
-import de.tekup.studentsabsence.entities.Student;
 import de.tekup.studentsabsence.repositories.GroupRepository;
-import de.tekup.studentsabsence.repositories.StudentRepository;
 import de.tekup.studentsabsence.services.GroupService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,7 +14,6 @@ import java.util.NoSuchElementException;
 @AllArgsConstructor
 public class GroupServiceImp implements GroupService {
     private final GroupRepository groupRepository;
-    private final StudentRepository studentRepository;
 
     @Override
     public List<Group> getAllGroups() {
@@ -48,13 +45,5 @@ public class GroupServiceImp implements GroupService {
         Group group = getGroupById(id);
         groupRepository.delete(group);
         return group;
-    }
-    @Override
-    public List<Student> getStudentsForGroup(long id) {
-        Group group = groupRepository.findById(id).orElse(null);
-        if (group == null) {
-            return new ArrayList<>();
-        }
-        return studentRepository.findByGroup(group);
     }
 }

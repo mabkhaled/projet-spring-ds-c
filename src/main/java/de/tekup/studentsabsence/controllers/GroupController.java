@@ -1,13 +1,14 @@
 package de.tekup.studentsabsence.controllers;
 
 
-import de.tekup.studentsabsence.entities.Absence;
-import de.tekup.studentsabsence.entities.Group;
-import de.tekup.studentsabsence.entities.Student;
+import de.tekup.studentsabsence.entities.*;
 import de.tekup.studentsabsence.enums.LevelEnum;
 import de.tekup.studentsabsence.enums.SpecialityEnum;
 import de.tekup.studentsabsence.holders.GroupSubjectHolder;
-import de.tekup.studentsabsence.services.*;
+import de.tekup.studentsabsence.services.AbsenceService;
+import de.tekup.studentsabsence.services.GroupService;
+import de.tekup.studentsabsence.services.GroupSubjectService;
+import de.tekup.studentsabsence.services.SubjectService;
 import lombok.AllArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -15,6 +16,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
+import java.util.ArrayList;
 import java.util.List;
 
 @Controller
@@ -25,7 +27,6 @@ public class GroupController {
     private final SubjectService subjectService;
     private final GroupSubjectService groupSubjectService;
     private final AbsenceService absenceService;
-    private final StudentService studentService;
 
     @GetMapping({"", "/"})
     public String index(Model model) {
@@ -82,11 +83,17 @@ public class GroupController {
     @GetMapping("/{id}/show")
     public String show(@PathVariable long id, Model model) {
         Group group = groupService.getGroupById(id);
+        List<GroupSubject> groupSubjects =new ArrayList<GroupSubject>();
+        groupSubjectService.getSubjectsByGroupId(id).forEach(groupSubjects::add);
         model.addAttribute("group", group);
-        model.addAttribute("groupSubjects",groupSubjectService.getSubjectsByGroupId(id));
+        model.addAttribute("groupSubjects",groupSubjects);
         model.addAttribute("students",group.getStudents());
         model.addAttribute("absenceService", absenceService);
-
+        //Question 1
+        Subject maxsubject = groupSubjectService.getMaxAbsenceSubject(groupSubjects );
+        Subject minsubject= groupSubjectService.getMinAbsenceSubject(groupSubjects);
+        model.addAttribute("MaxAbcensesSubject", maxsubject);
+        model.addAttribute("MinAbcensesSubject", minsubject);
         group.getStudents().forEach(student -> {
 
         });
@@ -125,12 +132,11 @@ public class GroupController {
     @GetMapping("/{id}/add-absences")
     public String addAbsenceView(@PathVariable long id, Model model) {
         Group group = groupService.getGroupById(id);
-        List<Student> students = groupService.getStudentsForGroup(id);
+
         model.addAttribute("group", group);
         model.addAttribute("absence", new Absence());
-        model.addAttribute("students", students);
-        System.out.println(group.getStudents());
         model.addAttribute("groupSubjects", groupSubjectService.getSubjectsByGroupId(id));
+        model.addAttribute("students", group.getStudents());
 
         return "groups/add-absences";
     }
@@ -138,22 +144,22 @@ public class GroupController {
     @PostMapping("/{id}/add-absences")
     public String addAbsence(@PathVariable long id, @Valid Absence absence, BindingResult bindingResult, @RequestParam(value = "students", required = false) List<Student> students, Model model) {
         //TODO Complete the body of this method
-        Group group = groupService.getGroupById(id);
-
-        if (bindingResult.hasErrors()) {
+        if(bindingResult.hasErrors()){
+            Group group = groupService.getGroupById(id);
 
             model.addAttribute("group", group);
+            model.addAttribute("absence", new Absence());
             model.addAttribute("groupSubjects", groupSubjectService.getSubjectsByGroupId(id));
-            model.addAttribute("students", students);
+            model.addAttribute("students", group.getStudents());
+
             return "groups/add-absences";
-
         }
-
-        for (Student student : students) {
-            absence.setStudent(student);
+        for (Student s:students) {
+            absence.setStudent(s);
+            //System.out.println(absence);
             absenceService.addAbsence(absence);
         }
         return "redirect:/groups/"+id+"/add-absences";
     }
-    }
 
+}
